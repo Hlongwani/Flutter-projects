@@ -1,27 +1,58 @@
-import 'package:flutter/material.dart';
-import 'package:frontend/screens/home_screen.dart';
-// Import the generated file
-//import 'firebase_options.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:shuttles_locations/id_girisi.dart';
+//import 'package:shuttles_locations/provider.dart';
+import 'package:shuttles_locations/giris.dart';
+
+import 'location_map.dart';
+import 'location_provider.dart';
+import 'service/firebase_auth.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'TaSH',
-      theme: ThemeData(
-  
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => LocationProvider(),
+          child: LocationMap(),
+        ),
+        Provider<AuthenticationService>(
+          create: (_) => AuthenticationService(FirebaseAuth.instance),
+        ),
+        StreamProvider(
+          create: (context) =>
+              context.read<AuthenticationService>().authStateChanges,
+        )
+      ],
+      child: MaterialApp(
+        title: 'CarFollow',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: AuthenticationWrapper(),
       ),
-      home: HomeScreen(),
     );
   }
 }
 
+class AuthenticationWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final firebaseUser = context.watch<User>();
+    if (firebaseUser != null) {
+      return IdGirisi();
+    }
+    return Giris();
+  }
+}
